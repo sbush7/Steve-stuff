@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Any Two Words v1.0.1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+        }
+        .confirm-btn {
+            background-color: #9b59b6;
+            font-size: 18px;
+            padding: 12px 20px;
+            margin-top: 15px;
+        }
+        .word-btn {
+            background-color: #3498db;
+            font-size: 24px;
+            padding: 20px;
+            margin: 10px;
+            width: 100%;
+            height: 100px;
+            transition: transform 0.2s;
+        }
+        .word-btn:hover {
+            transform: scale(1.05);
+        }
+        .random-btn {
+            background-color: #e67e22;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .listening-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            background-color: red;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1s infinite;
+        }
+        .speaking-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            background-color: blue;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .transcript-box {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            min-height: 60px;
+            background-color: #fff;
+            font-size: 20px;
+            text-align: center;
+        }
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .version-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #9b59b6;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        /* Phase-specific styles */
+        .phase {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        
+        /* Game button container */
+        .game-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        /* New words button */
+        .new-words-btn {
+            background-color: #7f8c8d;
+            margin-top: 10px;
+        }
+        
+        /* Settings panel */
+        .settings-panel {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .settings-group {
+            margin-bottom: 10px;
+        }
+        .settings-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .settings-group select, 
+        .settings-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .settings-toggle {
+            background-color: #34495e;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="version-indicator">VERSION: v1.0.1</div>
+    
+    <div class="container">
+        <h1>Any Two Words <span style="font-size: 14px; color: #7f8c8d;">v1.0.1</span></h1>
+        
+        <div class="settings-toggle" id="settingsToggle">⚙️ Settings</div>
+        
+        <div class="settings-panel" id="settingsPanel" style="display:none;">
+            <h3>Voice Settings</h3>
+            <div class="settings-group">
+                <label for="speechRate">Speech Rate (0.1-2.0):</label>
+                <input type="range" id="speechRate" min="0.1" max="2.0" step="0.1" value="1.0">
+                <span id="speechRateValue">1.0</span>
+            </div>
+            
+            <div class="settings-group">
+                <label for="speechPitch">Speech Pitch (0.1-2.0):</label>
+                <input type="range" id="speechPitch" min="0.1" max="2.0" step="0.1" value="1.0">
+                <span id="speechPitchValue">1.0</span>
+            </div>
+            
+            <div class="settings-group">
+                <label for="speechVolume">Speech Volume (0.0-1.0):</label>
+                <input type="range" id="speechVolume" min="0" max="1.0" step="0.1" value="1.0">
+                <span id="speechVolumeValue">1.0</span>
+            </div>
+            
+            <div class="settings-group">
+                <label for="voiceSelect">Voice Selection:</label>
+                <select id="voiceSelect"></select>
+            </div>
+        </div>
+        
+        <div class="status" id="status"><span class="listening-indicator"></span> Listening...</div>
+        
+        <!-- Phase 1: Listen for words -->
+        <div id="listeningPhase" class="phase active">
+            <!-- Simplified transcript box -->
+            <div class="transcript-box" id="transcript" style="min-height: 80px; font-size: 24px;">Speak to add words...</div>
+            
+            <div class="control-panel">
+                <button id="confirmBtn" class="confirm-btn" disabled>Confirm Words</button>
+            </div>
+        </div>
+        
+        <!-- Phase 2: Playing the game -->
+        <div id="playingPhase" class="phase">
+            <h2>Touch a button to hear the word:</h2>
+            
+            <div class="game-buttons" id="gameButtons">
+                <!-- Word buttons will be added here -->
+            </div>
+            
+            <div class="control-panel">
+                <button id="randomizeBtn" class="random-btn" title="Randomize Words">?</button>
+                <button id="newWordsBtn" class="new-words-btn">New Words</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // APP VERSION
+        const APP_VERSION = "v1.0.1";
+        console.log("Running Any Two Words version:", APP_VERSION);
+        
+        // DOM elements
+        const confirmBtn = document.getElementById('confirmBtn');
+        const statusEl = document.getElementById('status');
+        const transcriptEl = document.getElementById('transcript');
+        const listeningPhase = document.getElementById('listeningPhase');
+        const playingPhase = document.getElementById('playingPhase');
+        const gameButtons = document.getElementById('gameButtons');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        const newWordsBtn = document.getElementById('newWordsBtn');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsPanel = document.getElementById('settingsPanel');
+        
+        // Settings elements
+        const speechRateInput = document.getElementById('speechRate');
+        const speechPitchInput = document.getElementById('speechPitch');
+        const speechVolumeInput = document.getElementById('speechVolume');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const speechRateValue = document.getElementById('speechRateValue');
+        const speechPitchValue = document.getElementById('speechPitchValue');
+        const speechVolumeValue = document.getElementById('speechVolumeValue');
+        
+        // Variables
+        let recognition = null;
+        let isListening = false;
+        let isSpeaking = false;
+        let selectedWords = [];
+        let currentTranscript = '';
+        
+        // Settings
+        const settings = {
+            speechRate: 1.0,
+            speechPitch: 1.0,
+            speechVolume: 1.0,
+            voiceSelection: 'default'
+        };
+        
+        // Update settings display
+        function updateSettingsDisplay() {
+            speechRateValue.textContent = settings.speechRate;
+            speechPitchValue.textContent = settings.speechPitch;
+            speechVolumeValue.textContent = settings.speechVolume;
+        }
+        
+        // Initialize settings listeners
+        speechRateInput.addEventListener('input', function() {
+            settings.speechRate = parseFloat(this.value);
+            speechRateValue.textContent = settings.speechRate;
+        });
+        
+        speechPitchInput.addEventListener('input', function() {
+            settings.speechPitch = parseFloat(this.value);
+            speechPitchValue.textContent = settings.speechPitch;
+        });
+        
+        speechVolumeInput.addEventListener('input', function() {
+            settings.speechVolume = parseFloat(this.value);
+            speechVolumeValue.textContent = settings.speechVolume;
+        });
+        
+        voiceSelect.addEventListener('change', function() {
+            settings.voiceSelection = this.value;
+        });
+        
+        // Toggle settings panel
+        settingsToggle.addEventListener('click', function() {
+            if (settingsPanel.style.display === 'none') {
+                settingsPanel.style.display = 'block';
+                settingsToggle.textContent = '⚙️ Hide Settings';
+            } else {
+                settingsPanel.style.display = 'none';
+                settingsToggle.textContent = '⚙️ Settings';
+            }
+        });
+        
+        // Populate voice selection
+        function populateVoiceList() {
+            if (typeof speechSynthesis === 'undefined') {
+                voiceSelect.disabled = true;
+                voiceSelect.innerHTML = '<option value="default">Not available</option>';
+                return;
+            }
+            
+            // Get all available voices
+            const voices = speechSynthesis.getVoices();
+            
+            // Clear existing options
+            voiceSelect.innerHTML = '<option value="default">Default</option>';
+            
+            // Add each voice as an option
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                
+                // Mark default voice
+                if (voice.default) {
+                    option.textContent += ' - DEFAULT';
+                }
+                
+                voiceSelect.appendChild(option);
+            });
+        }
+        
+        // Initialize voice list
+        if (typeof speechSynthesis !== 'undefined') {
+            // Chrome loads voices asynchronously, so we need to wait for the event
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoiceList;
+            }
+            
+            // Initial population attempt
+            populateVoiceList();
+        }
+        
+        // Name correction function
+        function correctName(text) {
+            if (!text) return text;
+            
+            return text
+                .replace(/\bAnna\s+Lee\b/gi, "Annalee")
+                .replace(/\bAnna\s+Li\b/gi, "Annalee")
+                .replace(/\bAnnaly\b/gi, "Annalee")
+                .replace(/\bLuna\b/gi, "Lula");
+        }
+        
+        // Check for Speech Recognition support
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            statusEl.textContent = 'Speech recognition not supported in this browser.';
+            confirmBtn.disabled = true;
+        } else {
+            // Initialize speech recognition
+            function initSpeechRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                // Configure recognition
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                // Handle recognition result
+                recognition.onresult = function(event) {
+                    // Skip if currently speaking
+                    if (isSpeaking) {
+                        console.log("Skipping recognition result because speaking");
+                        return;
+                    }
+                    
+                    // Debug log full event
+                    console.log("Recognition event received:", event);
+                    
+                    try {
+                        // Get the latest result
+                        const results = event.results;
+                        if (!results || results.length === 0) {
+                            console.log("No results found in event");
+                            return;
+                        }
+                        
+                        const result = results[results.length - 1];
+                        if (!result || result.length === 0) {
+                            console.log("Empty result found");
+                            return;
+                        }
+                        
+                        const rawText = result[0].transcript;
+                        
+                        console.log("Raw text from recognition:", rawText);
+                        
+                        // Apply name correction
+                        const correctedText = correctName(rawText);
+                        
+                        console.log("Corrected text:", correctedText);
+                        
+                        // Update currentTranscript variable
+                        currentTranscript = correctedText;
+                        
+                        // CRITICAL FIX: Directly set the text content
+                        console.log("Updating transcript element with:", correctedText);
+                        transcriptEl.textContent = correctedText;
+                        
+                        // Enable confirm button if we have content
+                        confirmBtn.disabled = !correctedText.trim();
+                    } catch (error) {
+                        console.error("Error processing recognition result:", error);
+                    }
+                };
+                
+                // Handle recognition start
+                recognition.onstart = function() {
+                    console.log('Recognition started');
+                    isListening = true;
+                    statusEl.innerHTML = '<span class="listening-indicator"></span> Listening...';
+                };
+                
+                // Handle recognition end - auto-restart
+                recognition.onend = function() {
+                    console.log('Recognition ended');
+                    isListening = false;
+                    
+                    // Auto-restart if not currently in speaking mode and still in listening phase
+                    if (!isSpeaking && listeningPhase.classList.contains('active')) {
+                        console.log('Auto-restarting recognition');
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.error('Error auto-restarting recognition:', e);
+                                statusEl.textContent = 'Recognition error. Please reload the page.';
+                            }
+                        }, 500);
+                    }
+                };
+                
+                // Handle recognition errors
+                recognition.onerror = function(event) {
+                    console.error('Recognition error:', event.error);
+                    isListening = false;
+                    
+                    if (event.error === 'no-speech') {
+                        // Just restart - no need to notify user
+                        statusEl.innerHTML = '<span class="listening-indicator"></span> Listening...';
+                    } else if (event.error === 'audio-capture') {
+                        statusEl.textContent = 'Microphone not working or not connected.';
+                    } else if (event.error === 'not-allowed') {
+                        statusEl.textContent = 'Microphone permission denied. Please allow microphone access.';
+                    } else {
+                        statusEl.textContent = `Recognition error: ${event.error}. Please reload.`;
+                    }
+                    
+                    // Auto-restart on most errors
+                    if (event.error !== 'not-allowed' && listeningPhase.classList.contains('active')) {
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.error('Error restarting after error:', e);
+                            }
+                        }, 1000);
+                    }
+                };
+                
+                // Start recognition
+                try {
+                    recognition.start();
+                    console.log('Initial recognition started');
+                } catch (e) {
+                    console.error('Error starting initial recognition:', e);
+                    statusEl.textContent = 'Error starting speech recognition. Please reload the page.';
+                }
+            }
+            
+            // Start recognition immediately
+            initSpeechRecognition();
+        }
+        
+        // Confirm words and move to game
+        confirmBtn.addEventListener('click', function() {
+            confirmWords();
+        });
+        
+        // Confirm words function
+        function confirmWords() {
+            // Stop recognition if active
+            if (recognition && isListening) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
+            }
+            
+            // Parse words from transcript
+            const words = currentTranscript.split(/\s+/).filter(word => word.length > 0);
+            
+            console.log("Words from transcript:", words);
+            
+            if (words.length === 0) {
+                statusEl.textContent = 'No words detected. Please speak clearly.';
+                // Restart recognition
+                setTimeout(() => {
+                    initSpeechRecognition();
+                }, 1000);
+                return;
+            }
+            
+            // Switch to game phase
+            switchPhase('playing');
+            
+            // Select random words for the game
+            randomizeWords(words);
+        }
+        
+        // Switch between phases
+        function switchPhase(phase) {
+            if (phase === 'listening') {
+                listeningPhase.classList.add('active');
+                playingPhase.classList.remove('active');
+                statusEl.innerHTML = '<span class="listening-indicator"></span> Listening...';
+                
+                // CRITICAL: Set initial placeholder
+                const initialText = "Speak to add words...";
+                transcriptEl.textContent = initialText;
+                
+                // Debug current transcript element
+                console.log("Transcript element content:", transcriptEl.textContent);
+                console.log("Transcript element:", transcriptEl);
+                
+                // Restart recognition
+                setTimeout(() => {
+                    initSpeechRecognition();
+                }, 500);
+            } else if (phase === 'playing') {
+                listeningPhase.classList.remove('active');
+                playingPhase.classList.add('active');
+                statusEl.textContent = 'Touch a button to hear the word';
+            }
+        }
+        
+        // Randomize words for buttons
+        function randomizeWords(wordList) {
+            if (!wordList || wordList.length === 0) return;
+            
+            if (wordList.length === 1) {
+                // If only one word, put it on both buttons
+                selectedWords = [wordList[0], wordList[0]];
+            } else {
+                // Shuffle and pick 2 random words
+                const shuffled = [...wordList].sort(() => 0.5 - Math.random());
+                selectedWords = shuffled.slice(0, 2);
+            }
+            
+            // Update game buttons
+            updateGameButtons();
+        }
+        
+        // Update game buttons with selected words
+        function updateGameButtons() {
+            // Clear current buttons
+            gameButtons.innerHTML = '';
+            
+            // Create buttons for each word
+            selectedWords.forEach((word, index) => {
+                const button = document.createElement('button');
+                button.className = 'word-btn';
+                button.textContent = word;
+                button.onclick = () => speakWord(word);
+                
+                gameButtons.appendChild(button);
+            });
+        }
+        
+        // Speak a word
+        function speakWord(word) {
+            if (!('speechSynthesis' in window)) {
+                alert('Speech synthesis not supported in your browser.');
+                return;
+            }
+            
+            // Show speaking indicator
+            statusEl.innerHTML = '<span class="speaking-indicator"></span> Speaking...';
+            
+            // Cancel any current speech
+            window.speechSynthesis.cancel();
+            
+            // Create speech utterance
+            const utterance = new SpeechSynthesisUtterance(word);
+            
+            // Apply speech settings
+            utterance.rate = settings.speechRate;
+            utterance.pitch = settings.speechPitch;
+            utterance.volume = settings.speechVolume;
+            
+            // Apply voice selection if specified
+            if (settings.voiceSelection !== 'default') {
+                const voices = window.speechSynthesis.getVoices();
+                const selectedVoice = voices.find(voice => voice.name === settings.voiceSelection);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+            }
+            
+            // Set speaking state
+            isSpeaking = true;
+            
+            // Handle speech end
+            utterance.onend = function() {
+                isSpeaking = false;
+                statusEl.textContent = 'Touch a button to hear the word';
+            };
+            
+            // Handle errors
+            utterance.onerror = function(event) {
+                console.error('Speech error:', event);
+                isSpeaking = false;
+                statusEl.textContent = 'Error speaking word. Please try again.';
+            };
+            
+            // Speak the word
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (error) {
+                console.error('Error with speech synthesis:', error);
+                isSpeaking = false;
+                statusEl.textContent = 'Error speaking word. Please try again.';
+            }
+        }
+        
+        // Randomize button - change the word selection
+        randomizeBtn.addEventListener('click', function() {
+            // Parse words from the saved transcript
+            const words = currentTranscript.split(/\s+/).filter(word => word.length > 0);
+            randomizeWords(words);
+        });
+        
+        // New words button - go back to listening phase
+        newWordsBtn.addEventListener('click', function() {
+            // Switch back to listening phase
+            switchPhase('listening');
+        });
+        
+        // Initialize settings display
+        updateSettingsDisplay();
+    </script>
+</body>
+</html>
